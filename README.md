@@ -1,37 +1,36 @@
 # WMA Flow
 ===================
 
-FINTA Flow is a nextflow pipeline using the FINTA approach for white matter bundles recognition in tractography. 
+WMA Flow reimplements python scripts from the WMA github repository for tractogram bundling. See https://github.com/SlicerDMRI/whitematteranalysis.
 
-To use this pipeline you must have access to 6 documents - namely: 
-* best_model_ae.pt
-* finta_multibundles.sif
-* mni_masked.nii.gz
-* rbx_atlas (folder containing WM atlas bundles, AC.trk, AF_L.tr, ...)
-* rbx.json
-* thresholds_ae.json
-
-If you use this pipeline, please cite:
+Create a virtual environment with **python3.7** and pip install the wma github repository:
 
 ```
-Legarreta, J. H. et al. Filtering in tractography using autoencoders (FINTA). Medical Image Analysis 72, 102126 (2021)
+pip install git+https://github.com/SlicerDMRI/whitematteranalysis.git
 ```
 
+Run `wm_quality_control_tractography.py --help` to test if the installation is successful.
+
+## Software prerequisites
+   - Install [3D Slicer](https://download.slicer.org/)
+      > 3D Slicer is an open source software platform for medical image informatics, image processing, and three-dimensional visualization.
+   - Install [SlicerDMRI](http://dmri.slicer.org/download/)
+      > SlicerDMRI is an open-source project to improve and extend diffusion magnetic resonance imaging software in 3D Slicer.
+   - Install [whitematteranalysis (WMA)](https://github.com/SlicerDMRI/whitematteranalysis#wma-installation)
+      > WMA is an open source software package for data-driven fiber clustering white matter parcellation.
+
+## Download tutorial data (The atlas is there)
+   - Download the tutorial data package ([WMA_tutorial_data.zip](https://www.dropbox.com/s/beju3c0g9jqw5uj/WMA_tutorial_data.zip?dl=0), ~2.5GB)
+
+## Notes
+ All files must be converted in VTK format
 
 Requirements
 ------------
 
 * Nextflow
-
-Singularity/Docker
------------
-
-To launch the pipeline you can run:
-
-```
-nextflow run main.nf --input inputs/ --model /path/to/best_model_ae.pt --atlas_config /path/to/rbx.json --atlas_anat /path/to/mni_masked.nii.gz --atlas_directory /path/to/rbx_atlas/ --atlas_thresholds /path/to/thresholds_ae.json -with-singularity /path/to/finta_multibundles.sif -resume
-```
-
+* Python 3.7
+* Slicer
 
 Usage
 -----
