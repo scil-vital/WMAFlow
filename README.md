@@ -25,15 +25,24 @@ Run `wm_quality_control_tractography.py --help` to test if the installation is s
 ## Notes
  All files must be converted in VTK format
 
-Requirements
-------------
-
+## Requirements
 * Nextflow
 * Python 3.7
 * Slicer
 
-Usage
------
-
+## Usage
 See *USAGE* or run `nextflow run main.nf --help`
+
+## References
+    Zhang, F., Wu, Y., Norton, I., Rathi, Y., Makris, N., O'Donnell, LJ. 
+    An anatomically curated fiber clustering white matter atlas for consistent white matter tract parcellation across the lifespan. 
+    NeuroImage, 2018 (179): 429-447
+
+    O'Donnell LJ, Wells III WM, Golby AJ, Westin CF. 
+    Unbiased groupwise registration of white matter tractography.
+    In MICCAI, 2012, pp. 123-130.
+
+    O'Donnell, LJ., and Westin, CF. Automatic tractography segmentation
+    using a high-dimensional white matter atlas. Medical Imaging,
+    IEEE Transactions on 26.11 (2007): 1562-1575.
 
