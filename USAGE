@@ -1,0 +1,43 @@
+Pipeline for White Matter Analysis
+======================================
+
+USAGE
+
+nextflow run main.nf 
+--input inputs/ \
+--atlas_directory atlas/ \
+--slicer_path path_to_slicer/ [OPTIONAL_ARGUMENTS]
+
+
+DESCRIPTION
+
+    --input=/path/to/[root]             Root folder containing multiple subjects. 
+                                        You can pass many vtk file per subjects
+
+                                        [root]
+                                        ├── S1
+                                        │   └── *.vtk
+                                        └── S2
+                                            └── *
+
+    --atlas_directory                   Path of the folder containing all the atlas bundles
+
+    --slicer_path                       Path of Slicer software
+
+    OPTIONAL ARGUMENTS (current value)
+
+    --qc_only_anatomical_tracts         If flagged, will only QC anatomical tracts and will not
+                                        do it for intermediary process ($qc_only_anatomical_tracts).
+                                        We decided to do it for the first processes too.
+
+    --processes                         The number of parallel processes to launch ($cpu_count).
+                                        Only affects the local scheduler.
+
+    --output_dir                        Directory where to write the final results.
+                                        By default, will be in "./results"
+
+NOTES
+
+Use '-C config_file.config' to specify a non-default configuration file.
+The '-C config_file.config' must be inserted after the nextflow call
+like 'nextflow -C config_file.config run ...'.
