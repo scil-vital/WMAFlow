@@ -32,6 +32,7 @@ Run `wm_quality_control_tractography.py --help` to test if the installation is s
 * Nextflow
 * Python 3.7
 * Slicer
+* ANTs
 
 ## Usage
 See *USAGE* or run `nextflow run main.nf --help`
