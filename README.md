@@ -7,6 +7,7 @@ Create a virtual environment with **python3.7** and pip install the wma github r
 
 ```
 pip install git+https://github.com/SlicerDMRI/whitematteranalysis.git
+pip install git+https://github.com/scilus/scilpy.git
 ```
 
 Run `wm_quality_control_tractography.py --help` to test if the installation is successful.
@@ -19,11 +20,13 @@ Run `wm_quality_control_tractography.py --help` to test if the installation is s
    - Install [whitematteranalysis (WMA)](https://github.com/SlicerDMRI/whitematteranalysis#wma-installation)
       > WMA is an open source software package for data-driven fiber clustering white matter parcellation.
 
+   - ANTs
+
 ## Download tutorial data (The atlas is there)
    - Download the tutorial data package ([WMA_tutorial_data.zip](https://www.dropbox.com/s/beju3c0g9jqw5uj/WMA_tutorial_data.zip?dl=0), ~2.5GB)
 
 ## Notes
- All files must be converted in VTK format
+ All files must be converted in TRK format
 
 ## Requirements
 * Nextflow

@@ -50,12 +50,16 @@ log.info "Input: $params.input"
 root = file(params.input)
 
 Channel
-    .fromFilePairs("$root/**/*vtk", size: -1) { it.parent.name }
+    .fromFilePairs("$root/**/*trk", size: -1) { it.parent.name }
     .into{ 
-        sub_for_qc_track; 
-        sub_for_qc_overlap;
-        sub_for_registration 
+        sub_trk_for_check;
+        sub_trk;
     } 
+
+Channel
+    .fromPath("$root/**/*.nii.gz")
+    .map{[it.parent.name, it]}
+    .into{ reference; reference_for_check } // [sid, t1.nii.gz]
 
 if (!(params.atlas_directory)) {
     error "You must specify --atlas_directory."
@@ -73,6 +77,72 @@ Channel.fromPath("$params.atlas_directory")
         atlas_directory_for_hemisphere_assessment;
         atlas_directory_for_clusters_to_anatomical_tracts
     }
+
+sub_trk_for_check
+    .join(reference_for_check)
+    .set{compatibility_check}
+
+process Check_Files_Compatibility {
+    errorStrategy 'ignore'
+
+    input:
+    set sid, 
+        file(tractogram), 
+        file(reference) from compatibility_check
+
+    output:
+    // [sid, affine.mat, inverseWarp.nii.gz, atlas.nii.gz, t1.nii.gz]
+    set sid into sid_kept
+
+    script:
+    """
+    compatibility=\$(scil_verify_space_attributes_compatibility.py ${tractogram} ${reference})
+    if [[ \$compatibility != "All input files have compatible headers." ]]
+    then
+        exit 1
+    fi    
+    """
+}
+
+sid_kept
+    .join(reference)
+    .join(sub_trk)
+    .set{reference_trk}
+
+process Preprocessing {
+    cpus params.processes
+    memory '5 GB'
+
+    input:
+    set sid, file(reference), file(tractograms) from reference_trk
+
+    output:
+    set sid, "*vtk" into sub_for_qc_track, sub_for_qc_overlap, sub_for_registration 
+    file "RAS*nii*"
+
+    script:
+    String tracking = tractograms.join(", ").replace(',', '')
+    """
+    mrconvert ${reference} RAS_${reference} -strides 1,2,3
+    antsRegistrationSyNQuick.sh -d 3 -f RAS_${reference} -m ${reference} -o to_ras -t a -n ${params.processes}
+    for i in ${tracking}
+    do
+
+        echo "Applying transform !"
+        scil_apply_transform_to_tractogram.py \${i} RAS_${reference} to_ras0GenericAffine.mat RAS_\${i} --inverse
+
+        echo "Flip hacking !"
+        scil_flip_streamlines.py RAS_\${i} flip_y_RAS_\${i} y
+
+        filename=\$(basename -- "flip_y_RAS_\${i}")
+        name="\${filename%.*}"
+
+        echo "Converting to VTK !"
+        scil_convert_tractogram.py flip_y_RAS_\${i} \${name}.vtk 
+    done   
+
+    """
+}
 
 process WM_Quality_Control_Tractography {
     publishDir "./results/${sid}/QC"

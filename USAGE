@@ -12,13 +12,15 @@ nextflow run main.nf
 DESCRIPTION
 
     --input=/path/to/[root]             Root folder containing multiple subjects. 
-                                        You can pass many vtk file per subjects
+                                        You can pass many trk file per subjects but only one nifti
 
                                         [root]
                                         ├── S1
-                                        │   └── *.vtk
+                                        |   ├── *.nii.gz
+                                        │   └── *.trk
                                         └── S2
                                             └── *
+
 
     --atlas_directory                   Path of the folder containing all the atlas bundles
 
