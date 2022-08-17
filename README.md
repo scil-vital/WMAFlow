@@ -26,7 +26,9 @@ Run `wm_quality_control_tractography.py --help` to test if the installation is s
    - Download the tutorial data package ([WMA_tutorial_data.zip](https://www.dropbox.com/s/beju3c0g9jqw5uj/WMA_tutorial_data.zip?dl=0), ~2.5GB)
 
 ## Notes
- All files must be converted in TRK format
+ * All files must be in TRK format
+ * A weird hack is done in the preprocessing process. We flip P-A to A-P while still being in RAS. The atlas is flipped for some unknown reasons
+ * All output files are in VTP. We are currently looking to convert VTP format to TRK. Slicer is a great software to read the VTP format !
 
 ## Requirements
 * Nextflow
