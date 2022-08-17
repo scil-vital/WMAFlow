@@ -5,7 +5,9 @@ if(params.help) {
     cpu_count = Runtime.runtime.availableProcessors()
 
     bindings = ["cpu_count":"$cpu_count",
-                "qc_only_anatomical_tracts":"$params.qc_only_anatomical_tracts"]
+                "qc_only_anatomical_tracts":"$params.qc_only_anatomical_tracts",
+                "register_processes":"$params.register_processes",
+                "processes":"$params.processes"]
 
     engine = new groovy.text.SimpleTemplateEngine()
     template = engine.createTemplate(usage.text).make(bindings)
@@ -110,7 +112,7 @@ sid_kept
     .set{reference_trk}
 
 process Preprocessing {
-    cpus params.processes
+    cpus params.register_processes
     memory '5 GB'
 
     input:
@@ -124,9 +126,15 @@ process Preprocessing {
     String tracking = tractograms.join(", ").replace(',', '')
     """
     mrconvert ${reference} RAS_${reference} -strides 1,2,3
-    antsRegistrationSyNQuick.sh -d 3 -f RAS_${reference} -m ${reference} -o to_ras -t a -n ${params.processes}
+    antsRegistrationSyNQuick.sh -d 3 -f RAS_${reference} -m ${reference} -o to_ras -t a -n ${params.register_processes}
     for i in ${tracking}
     do
+
+        if [[ ${params.resampling_tractograms} -ge 1 ]]; then
+            echo "Resampling !"
+            scil_resample_tractogram.py \${i} ${params.resampling_tractograms} \${i} -f -v
+            scil_count_streamlines.py \${i}
+        fi
 
         echo "Applying transform !"
         scil_apply_transform_to_tractogram.py \${i} RAS_${reference} to_ras0GenericAffine.mat RAS_\${i} --inverse

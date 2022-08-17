@@ -32,7 +32,12 @@ DESCRIPTION
                                         do it for intermediary process ($qc_only_anatomical_tracts).
                                         We decided to do it for the first processes too.
 
-    --processes                         The number of parallel processes to launch ($cpu_count).
+    --resampling_tractograms            Resample tractograms to a fixe number of streamlines ($resampling_tractograms).
+
+    --register_processes                The number of parallel processes to launch ($register_processes).
+                                        Only affects the local scheduler.
+
+    --processes                         The number of parallel processes to launch ($processes).
                                         Only affects the local scheduler.
 
     --output_dir                        Directory where to write the final results.
