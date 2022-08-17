@@ -130,14 +130,15 @@ process Preprocessing {
     for i in ${tracking}
     do
 
+        cp -L \${i} dereference_\${i}
         if [[ ${params.resampling_tractograms} -ge 1 ]]; then
             echo "Resampling !"
-            scil_resample_tractogram.py \${i} ${params.resampling_tractograms} \${i} -f -v
-            scil_count_streamlines.py \${i}
+            scil_resample_tractogram.py dereference_\${i} ${params.resampling_tractograms} dereference_\${i} -f -v
+            scil_count_streamlines.py dereference_\${i}
         fi
 
         echo "Applying transform !"
-        scil_apply_transform_to_tractogram.py \${i} RAS_${reference} to_ras0GenericAffine.mat RAS_\${i} --inverse
+        scil_apply_transform_to_tractogram.py dereference_\${i} RAS_${reference} to_ras0GenericAffine.mat RAS_\${i} --inverse
 
         echo "Flip hacking !"
         scil_flip_streamlines.py RAS_\${i} flip_y_RAS_\${i} y
