@@ -7,7 +7,8 @@ if(params.help) {
     bindings = ["cpu_count":"$cpu_count",
                 "qc_only_anatomical_tracts":"$params.qc_only_anatomical_tracts",
                 "register_processes":"$params.register_processes",
-                "processes":"$params.processes"]
+                "processes":"$params.processes",
+                "resampling_tractograms": "$params.resampling_tractograms"]
 
     engine = new groovy.text.SimpleTemplateEngine()
     template = engine.createTemplate(usage.text).make(bindings)
@@ -119,7 +120,8 @@ process Preprocessing {
     set sid, file(reference), file(tractograms) from reference_trk
 
     output:
-    set sid, "*vtk" into sub_for_qc_track, sub_for_qc_overlap, sub_for_registration 
+    set sid, "*vtk" into sub_for_qc_track, sub_for_qc_overlap, sub_for_registration, sub_for_back_registration
+    set sid, "flip_y_RAS_${reference}" into flip_volume_for_postprocessing
     file "RAS*nii*"
 
     script:
@@ -138,16 +140,17 @@ process Preprocessing {
         fi
 
         echo "Applying transform !"
-        scil_apply_transform_to_tractogram.py dereference_\${i} RAS_${reference} to_ras0GenericAffine.mat RAS_\${i} --inverse
+        scil_apply_transform_to_tractogram.py dereference_\${i} RAS_${reference} to_ras0GenericAffine.mat RAS_\${i} --inverse -f
 
         echo "Flip hacking !"
-        scil_flip_streamlines.py RAS_\${i} flip_y_RAS_\${i} y
+        scil_flip_streamlines.py RAS_\${i} flip_y_RAS_\${i} y -f
+        scil_flip_volume.py RAS_${reference} flip_y_RAS_${reference} y -f
 
         filename=\$(basename -- "flip_y_RAS_\${i}")
         name="\${filename%.*}"
 
         echo "Converting to VTK !"
-        scil_convert_tractogram.py flip_y_RAS_\${i} \${name}.vtk 
+        scil_convert_tractogram.py flip_y_RAS_\${i} \${name}.vtk -f
     done   
 
     """
@@ -358,7 +361,7 @@ tract_registration_for_harden_transform
 
 process WM_Harden_Transform {
     publishDir "./results/${sid}/FiberClustering"
-    memory '5 GB'
+    memory '2 GB'
 
     input:
     set sid, file(tracking), cluster, slicer from files_for_wm_harder_transform
@@ -388,7 +391,7 @@ process WM_Harden_Transform {
 
 process WM_Separate_Clusters_By_Hemisphere {
     publishDir "./results/${sid}/FiberClustering"
-    memory '5 GB'
+    memory '2 GB'
 
     input:
     set sid, file(clusters) from transformed_clusters_for_hemisphere_assessment
@@ -414,13 +417,13 @@ hemisphere_cluster_for_anatomical_tracts
 
 process WM_Append_Clusters_To_Anatomical_Tracts {
     publishDir "./results/${sid}/AnatomicalTracts"
-    memory '5 GB'
+    memory '2 GB'
 
     input:
     set sid, file(clusters), file(atlas_directory) from files_for_clusters_to_anatomical_tracts
 
     output:
-    set sid, "anat/*" into anatomical_tracts_for_qc
+    set sid, "anat/*" into anatomical_tracts_for_qc, anatomical_tracts_for_postprocessing
 
     script:
     String clusters = clusters.join(", ").replace(',', '')
@@ -436,7 +439,7 @@ process WM_Append_Clusters_To_Anatomical_Tracts {
 
 process WM_Quality_Control_Tractography_For_Anatomical_Tracts {
     publishDir "./results/${sid}/QC"
-    memory '5 GB'
+    memory '2 GB'
 
     input:
     set sid, file(clusters) from anatomical_tracts_for_qc
@@ -451,6 +454,57 @@ process WM_Quality_Control_Tractography_For_Anatomical_Tracts {
     do
         name=\$(basename "\$i")
         wm_quality_control_tractography.py \${i} ./AnatomicalTracts/\${name}
+    done
+    """
+}
+
+anatomical_tracts_for_postprocessing
+    .join(sub_for_back_registration)
+    .join(flip_volume_for_postprocessing)
+    .set{files_for_back_registration}
+
+
+process Register_In_Native_Space {
+    publishDir "./results/${sid}/Postprocessing"
+    memory '2 GB'
+
+    input:
+    set sid, file(tracking), tracking_original, file(reference) from files_for_back_registration
+
+    output:
+    set sid
+    file "affine_*/*"
+
+    script:
+    String tracking = tracking.join(", ").replace(',', '')
+    tracking_original = (tracking_original instanceof Path) ? tracking_original : tracking_original[0]
+    """
+    echo ${tracking_original}
+
+    tracking_original=\$(dirname ${tracking_original})
+
+    for i in ${tracking}
+    do
+        name=\$(basename "\$i")
+        echo \${name}
+        mkdir -p \${name}
+        concatenate_vtk.py \${i}/*vtp \${name}/\${name}.vtk -f
+        wm_register_to_atlas_new.py -mode affine \
+            \${name}/\${name}.vtk \${tracking_original}/\${name}.vtk ./affine_\${name} -f 100000 -verbose
+
+        divide_tractograms_in_bundles.py \
+            affine_\${name}/\${name}/output_tractography/*reg.vtk \
+            \${name}/\${name}.json \
+            affine_\${name}/\${name}/bundles -f
+
+        for b in affine_\${name}/\${name}/bundles/*vtk
+        do
+            b_filename=\$(basename -- "\$b")
+            b_name="\${b_filename%.*}"
+            scil_convert_tractogram.py \$b affine_\${name}/\${name}/bundles/\${b_name}.trk --reference ${reference}
+            scil_remove_invalid_streamlines.py affine_\${name}/\${name}/bundles/\${b_name}.trk affine_\${name}/\${name}/bundles/ic_\${b_name}.trk 
+            scil_flip_streamlines.py affine_\${name}/\${name}/bundles/ic_\${b_name}.trk affine_\${name}/\${name}/bundles/flip_ic_\${b_name}.trk y -f 
+        done
     done
     """
 }

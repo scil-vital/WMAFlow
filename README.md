@@ -3,6 +3,8 @@
 
 WMA Flow reimplements python scripts from the WMA github repository for tractogram bundling. See https://github.com/SlicerDMRI/whitematteranalysis.
 
+Export `path/to/bin` to PATH
+
 Create a virtual environment with **python3.7** and pip install the wma github repository:
 
 ```
